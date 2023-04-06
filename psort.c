@@ -6,8 +6,8 @@
 
 //Struct for key(first 4 bytes) and value(next 96 bytes)
 typedef struct{
-	char key[5];
-	char value[97];
+	char key[5];     //1 extra bit for NULL terminating char
+	char value[97];  //1 extra bit for NULL terminating char
 } Record;
 
 
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     int num_threads = strtol(argv[3], NULL, 10);
 
 
-    // Open input file in binary mode
+  // Open input file 
 	FILE* input_file = fopen(input_filename, "rb");
 
 	//NULL CHECK
@@ -56,13 +56,13 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-    // Get the size of the input file
-    fseek(input_file, 0, SEEK_END);
-    int input_file_size = ftell(input_file);
+  // Get the size of the input file
+  fseek(input_file, 0, SEEK_END);
+  int input_file_size = ftell(input_file);
 
 
-    // Set the file pointer back to the beginning
-    fseek(input_file, 0, SEEK_SET);
+  // Set the file pointer back to the beginning
+  fseek(input_file, 0, SEEK_SET);
 
 	// Calculate the number of records in the file
 	//int num_records = input_file_size / sizeof(Record);
@@ -92,13 +92,13 @@ int main(int argc, char** argv) {
   //      printf("Record %d: key=%s, value=%s\n", i+1, records[i].key, records[i].value);
   //  }
 
-    //UP TO HERE IT PRINTS
-    //Record 1: key=aaaa, value=vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+  //UP TO HERE IT PRINTS
+  //Record 1: key=aaaa, value=vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	//Record 2: key=cccc, value=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 	//Record 3: key=bbbb, value=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 
-	merge_sort(records, num_records); //FIX MERGE FUNCTION
+	merge_sort(records, num_records); //FIX MERGE FUNCTION 
 
 
 
