@@ -5,8 +5,8 @@
 
 //Struct for key(first 4 bytes) and value(next 96 bytes)
 typedef struct{
-	char key[5];     //1 extra bit for NULL terminating char
-	char value[97];  //1 extra bit for NULL terminating char
+	char record[101];	// pointer to record
+	int key;			// key for record
 } Record;
 
 // Struct for list of Records
@@ -17,50 +17,45 @@ typedef struct{
 
 Records partitionRecords(Records rs, int first, int last){
 	int size = last - first;
-	//printf("in partitionRecords, size: %d\n", size);
-	//printf("first: %d, last: %d\n", first, last);
 	Record *new_rs = (Record*) malloc(size * sizeof(Record));
 	for (int i = 0; i < size; i++){
 		new_rs[i] = rs.records[first+i];
 	}
 	Records r = {new_rs, size};
-	//printRecords(r);
 	return r;
 }
 
 void printRecords(Records rs){
 	printf("printing records of size %d\n", rs.size);
 	for (int i = 0; i < rs.size; i++){
-		printf("\trecord[%d] key: %s\tvalue: %s\n", i, rs.records[i].key, rs.records[i].value);
+		printf("\trecord[%d]: %s\n", i, rs.records[i].record);
 	}
 }
 
 //function to merge both halves
 Records merge(Records a, Records b){
-	printf("\n in merge \n");
-	printf("printing a\n");
-	printRecords(a);
-	printf("printing b\n");
-	printRecords(b);
 	Record* m = (Record*) malloc((a.size + b.size) * sizeof(Record));
 	int i_a = 0;
 	int i_b = 0;
 	int m_i = 0;
-	//printf("i_a: %d\ta.size: %d\ti_b: %d\tb.size: %d\n", i_a, a.size, i_b, b.size);
 	while (i_a < a.size && i_b < b.size){
-		printf("a key: %s\n", a.records[i_a].key);
-		printf("b key: %s\n", b.records[i_b].key);
-		if (strcmp(a.records[i_a].key, b.records[i_b].key) <= 0){
-			Record r = { a.records[i_a].key, a.records[i_a++].value};
-			m[m_i++] = r;
+		if (a.records[i_a].key < b.records[i_b].key){
+			m[m_i++] = a.records[i_a++];
 		} else {
-			Record r = { b.records[i_b].key, b.records[i_b++].value};
-			m[m_i++] = r;
+			m[m_i++] = b.records[i_b++];
 		}
 	}
-	Records merged_r = {m, m_i++};
-	// printf("in merge\n");
-	// printRecords(merged_r); 
+
+	if (i_a == a.size && i_b != b.size){
+		for (int i = i_b; i < b.size; i++){
+			m[m_i++] = b.records[i];
+		}
+	} else if (i_a != a.size && i_b == b.size) {
+		for (int i = i_a; i < a.size; i++){
+			m[m_i++] = a.records[i];
+		}
+	}
+	Records merged_r = {m, m_i++}; 
 	return merged_r;
 }
 
@@ -69,28 +64,17 @@ Records merge(Records a, Records b){
 Records merge_sort(Records rs){
 	int left = 0;
 	int right = rs.size;
-	printf("\nleft: %d\t right: %d\n", left, right);
 	if(right > 1){
 		int mid = (right + 1) / 2;
-		printf("mid: %d\n", mid);
 
 		Records a = merge_sort(partitionRecords(rs, left, mid));
-		//printf("\ndone with a\n");
 		Records b = merge_sort(partitionRecords(rs, mid, right));
-		//printf("\ndone with b\n");
 
 		return merge(a, b);
 	}
-	//printRecords(rs);
 	return rs;
 
 }
-
-
-// void merge_sort(Records rs){
-// 	merge_sort_helper(rs);
-// }
-
 
 int main(int argc, char** argv) {
 	
@@ -119,45 +103,32 @@ int main(int argc, char** argv) {
 	fseek(input_file, 0, SEEK_SET);
 
 	// Calculate the number of records in the file
-	//int num_records = input_file_size / sizeof(Record);
-	int num_records = (input_file_size + sizeof(Record) - 1) / sizeof(Record);
+	int num_records = input_file_size / 100;
 
-	//printf("Records: %d\n",num_records);
+	printf("num_records %d\n",num_records); // if I delete this line it starts to throw an error? I don't know why
 
 	//Create array of Records to hold input data
-	Record* records = (Record*) malloc(num_records * sizeof(Record));
+	Record* records = (Record*) malloc(num_records * 100 * sizeof(char));
 
     // Read the input data file into an array of records
     for (int i = 0; i < num_records; i++) {
-
-        fread(records[i].key, sizeof(char), 4, input_file);
-        records[i].key[5] = '\0';
-        fread(records[i].value, sizeof(char), 96, input_file);
-        records[i].value[97] = '\0';
-       // printf("Read record %d: key=%s, value=%s\n", i+1, records[i].key, records[i].value); 
+        fread(records[i].record, sizeof(char), 100, input_file);
+		char * r = (char*) records[i].record;
+		int key = *(int*)r;
+       	records[i].key = key;
         fseek(input_file, 1, SEEK_CUR);
     }
 
     //Close the input file
     fclose(input_file);
 
-    // Print out each record in the array.
-  //  for (int i = 0; i < num_records; i++) {
-  //      printf("Record %d: key=%s, value=%s\n", i+1, records[i].key, records[i].value);
-  //  }
-
-  //UP TO HERE IT PRINTS
-  //Record 1: key=aaaa, value=vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-	//Record 2: key=cccc, value=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
-	//Record 3: key=bbbb, value=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
 	Records rs = {records, num_records};
+	printf("before merge\n");
+	printRecords(rs);
 
 	Records res = merge_sort(rs); //FIX MERGE FUNCTION 
 
-	//printf("num_records: %d\n", num_records);
-	//printf("res.size: %d\n", res.size);
-
+	printf("after merge\n");
 	printRecords(res);
 
 	free(records);
