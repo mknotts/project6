@@ -12,10 +12,62 @@ typedef struct{
 
 
 //function to merge both halves
-void merge(Record *arr, int left, int mid, int right){
+void merge(Record arr[], int l, int m, int r){
+	int i,j,k;
+	int n1 = m-l+1;
+	int n2 = r-m;
+	
+	//temp arrays
+	Record L[n1], R[n2];
 
+	//copy data to temp arrays L and R
+	for(i = 0;i<n1;i++){
+		L[i] = arr[l+i];
+	}
+	for(j=0;j<n2;j++){
+		R[j] = arr[m+1+j];
+	}
+
+	//Merge the temp arrays back into arr[]
+	i=0;
+	j=0;
+	k=l;
+	while(i<n1 && j<n2){
+
+		if(L[i].key <= R[j].key){
+
+			arr[k] = L[i];
+			i++;
+
+		}else{
+			arr[k] = R[j];
+			j++;
+		}
+		k++;
+	}
+
+	//copy remaining elements of L[]
+	while(i<n1){
+
+		arr[k] = L[i];
+		j++;
+		k++;
+
+	}
+
+	//copy remaining elements of R[]
+	while(j<n2){
+
+		arr[k] = R[j];
+		j++;
+		k++;
+
+	}
 
 }
+	
+
+
 
 //recursive function that splits array into two halves and calls itself on each half
 //https://www.geeksforgeeks.org/c-program-for-merge-sort/
