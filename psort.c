@@ -3,8 +3,6 @@
 #include <pthread.h>
 #include <string.h>
 
-int num_records;
-
 //Struct for key(first 4 bytes) and value(next 96 bytes)
 typedef struct{
 	char key[5];     //1 extra bit for NULL terminating char
@@ -18,22 +16,40 @@ typedef struct{
 } Records;
 
 Records partitionRecords(Records rs, int first, int last){
-	int size = (last - first) + 1;
+	int size = last - first;
+	//printf("in partitionRecords, size: %d\n", size);
+	//printf("first: %d, last: %d\n", first, last);
 	Record *new_rs = (Record*) malloc(size * sizeof(Record));
 	for (int i = 0; i < size; i++){
 		new_rs[i] = rs.records[first+i];
 	}
 	Records r = {new_rs, size};
+	//printRecords(r);
 	return r;
+}
+
+void printRecords(Records rs){
+	printf("printing records of size %d\n", rs.size);
+	for (int i = 0; i < rs.size; i++){
+		printf("\trecord[%d] key: %s\tvalue: %s\n", i, rs.records[i].key, rs.records[i].value);
+	}
 }
 
 //function to merge both halves
 Records merge(Records a, Records b){
-	Record* m = (Record*) malloc(num_records * sizeof(Record));
+	printf("\n in merge \n");
+	printf("printing a\n");
+	printRecords(a);
+	printf("printing b\n");
+	printRecords(b);
+	Record* m = (Record*) malloc((a.size + b.size) * sizeof(Record));
 	int i_a = 0;
 	int i_b = 0;
 	int m_i = 0;
+	//printf("i_a: %d\ta.size: %d\ti_b: %d\tb.size: %d\n", i_a, a.size, i_b, b.size);
 	while (i_a < a.size && i_b < b.size){
+		printf("a key: %s\n", a.records[i_a].key);
+		printf("b key: %s\n", b.records[i_b].key);
 		if (strcmp(a.records[i_a].key, b.records[i_b].key) <= 0){
 			Record r = { a.records[i_a].key, a.records[i_a++].value};
 			m[m_i++] = r;
@@ -43,6 +59,8 @@ Records merge(Records a, Records b){
 		}
 	}
 	Records merged_r = {m, m_i++};
+	// printf("in merge\n");
+	// printRecords(merged_r); 
 	return merged_r;
 }
 
@@ -50,15 +68,20 @@ Records merge(Records a, Records b){
 //https://www.geeksforgeeks.org/c-program-for-merge-sort/
 Records merge_sort(Records rs){
 	int left = 0;
-	int right = rs.size - 1;
-	if(right < left){
-		int mid = left + (right-left) / 2;
+	int right = rs.size;
+	printf("\nleft: %d\t right: %d\n", left, right);
+	if(right > 1){
+		int mid = (right + 1) / 2;
+		printf("mid: %d\n", mid);
 
 		Records a = merge_sort(partitionRecords(rs, left, mid));
-		Records b = merge_sort(partitionRecords(rs, mid+1, right));
+		//printf("\ndone with a\n");
+		Records b = merge_sort(partitionRecords(rs, mid, right));
+		//printf("\ndone with b\n");
 
 		return merge(a, b);
-	} 
+	}
+	//printRecords(rs);
 	return rs;
 
 }
@@ -70,8 +93,7 @@ Records merge_sort(Records rs){
 
 
 int main(int argc, char** argv) {
-
-
+	
 	// Read command-line arguments
 	// prompt> ./psort input output 4
     const char* input_filename = argv[1];
@@ -98,7 +120,7 @@ int main(int argc, char** argv) {
 
 	// Calculate the number of records in the file
 	//int num_records = input_file_size / sizeof(Record);
-	num_records = (input_file_size + sizeof(Record) - 1) / sizeof(Record);
+	int num_records = (input_file_size + sizeof(Record) - 1) / sizeof(Record);
 
 	//printf("Records: %d\n",num_records);
 
@@ -132,9 +154,11 @@ int main(int argc, char** argv) {
 	Records rs = {records, num_records};
 
 	Records res = merge_sort(rs); //FIX MERGE FUNCTION 
-	for (int i = 0; i < res.size; i++){
-		printf("Record %d: key=%s, value=%s\n", i+1, res.records[i].key, res.records[i].value);
-	}
+
+	//printf("num_records: %d\n", num_records);
+	//printf("res.size: %d\n", res.size);
+
+	printRecords(res);
 
 	free(records);
 
