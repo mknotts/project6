@@ -105,10 +105,8 @@ int main(int argc, char** argv) {
 	// Calculate the number of records in the file
 	int num_records = input_file_size / 100;
 
-	printf("num_records %d\n",num_records); // if I delete this line it starts to throw an error? I don't know why
-
 	//Create array of Records to hold input data
-	Record* records = (Record*) malloc(num_records * 100 * sizeof(char));
+	Record* records = (Record*) malloc(num_records * 100 * sizeof(Record));
 
     // Read the input data file into an array of records
     for (int i = 0; i < num_records; i++) {
@@ -132,6 +130,7 @@ int main(int argc, char** argv) {
 	printRecords(res);
 
 	free(records);
+	free(res.records);
 
 	return 0;
 
