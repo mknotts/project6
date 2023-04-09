@@ -152,6 +152,21 @@ int main(int argc, char** argv) {
 
 	merge_sort(records, num_records); //FIX MERGE FUNCTION 
 
+	/**  ask TA about sorting threads
+	//CREATE THREADS	
+	pthread_t threads[num_threads];
+	int thread_ids[num_threads];
+	for(int i =0;i<num_threads;i++){
+		thread_ids[i]=i;
+		pthread_create(&threads[i], NULL, merge, &thread_ids[i]);
+	}
+
+	//WAIT FOR THREADS TO FINISH	
+	for(int i =0; i<num_threads;i++){
+		pthread_join(threads[i],NULL);
+	}
+
+	**/
 
 
 	free(records);
