@@ -129,6 +129,20 @@ int main(int argc, char** argv) {
 	printf("after merge\n");
 	printRecords(res);
 
+
+	//Printing to output file
+FILE* output_file = fopen(output_filename, "w");
+if(output_file == NULL){
+    fprintf(stderr, "Could not open output file '%s'\n", output_filename);
+    exit(EXIT_FAILURE);
+}
+
+for(int i = 0; i < res.size; i++) {
+    fprintf(output_file, "%s\n", res.records[i].record);
+}
+
+fclose(output_file);
+
 	free(records);
 	free(res.records);
 
