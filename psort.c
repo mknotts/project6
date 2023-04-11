@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <unistd.h>
 
 //Struct for key(first 4 bytes) and value(next 96 bytes)
 typedef struct{
-	char record[101];	// pointer to record
+	char record[100];	// pointer to record
 	int key;			// key for record
 } Record;
 
@@ -118,11 +119,11 @@ int main(int argc, char** argv) {
 	int num_records = input_file_size / 100;
 
 	//Create array of Records to hold input data
-	Record* records = (Record*) malloc(num_records * 100 * sizeof(Record));
+	Record* records = (Record*) malloc(num_records * 99 * sizeof(Record));
 
     // Read the input data file into an array of records
     for (int i = 0; i < num_records; i++) {
-        fread(records[i].record, sizeof(char), 100, input_file);
+        fread(records[i].record, sizeof(char), 99, input_file);
 		char * r = (char*) records[i].record;
 		int key = *(int*)r;
        	records[i].key = key;
@@ -132,22 +133,31 @@ int main(int argc, char** argv) {
     //Close the input file
     fclose(input_file);
 
+	Records rs = {records, num_records};
+
+	// printf("printing input\n");
+	// printRecords(rs);
+
 	// set up arguments
 	returns = (Records *) malloc(num_threads * sizeof(Records));
 	currIndex = 0; 
 	Records* arguments = malloc(num_threads * sizeof(Records));
-	Records rs = {records, num_records};
 	int start = 0;
 	int interval = num_records / num_threads;
 	int end = interval + (num_records % num_threads);
 	int i = 0;
 	while (end <= num_records){
-		//printf("start: %d, end: %d, interval: %d\n", start, end, interval);
+		// printf("start: %d, end: %d, interval: %d\n", start, end, interval);
 		arguments[i] = partitionRecords(rs, start, end);
 		start = end;
 		end += interval;
 		i++;
 	}
+
+	// printf("printing arguments\n");
+	// for (i = 0; i < num_threads; i++){
+	// 	printRecords(arguments[i]);
+	// }
 
 	// create threads
 	pthread_t child_threads[num_threads];
@@ -155,20 +165,20 @@ int main(int argc, char** argv) {
 		pthread_create(&child_threads[i], NULL, call_merge_sort, &arguments[i]);
 	}
 
-
-
-	// call merge in create threads above
-	//Records res = merge_sort(rs); 
 	// join threads
-
 	for(int i = 0; i < num_threads; i++) {
         pthread_join(child_threads[i], NULL);
     }
 
-	//printf("joined");
-
+	// printf("joined\n");
 
 	Records ret = returns[0];
+
+	// printf("before merging results\n");
+
+	// for (i = 0; i < num_threads; i++){
+	// 	printRecords(returns[i]);
+	// }
 
 	for (i = 1; i < num_threads; i++){
 		ret = merge(ret, returns[i]);
@@ -180,6 +190,8 @@ int main(int argc, char** argv) {
 		fputs(ret.records[i].record, output);
 		fputs("\n", output);
 	}
+
+	fsync(output);
 
 	free(records);
 	free(ret.records);
