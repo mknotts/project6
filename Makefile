@@ -7,7 +7,7 @@ run:
 	./psort.o input2.txt output.txt 4
 
 small:
-	./psort.o test-small-in.txt output.txt 4
+	./psort.o test-small-in.txt output.txt 1
 
 small2:
 	./psort.o test-small2-in.txt output.txt 4

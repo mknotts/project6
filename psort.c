@@ -156,6 +156,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < num_threads; ++i) {
     pthread_join(thr[i], NULL);
   }
+  
 /*
   //merge results from each thread
   Records merged_rs = {NULL,0};
