@@ -3,6 +3,14 @@
 #include <pthread.h>
 #include <string.h>
 
+// create thread argument struct for thr_func() 
+typedef struct _thread_data_t {
+  int tid;
+  double stuff;
+} thread_data_t;
+
+
+
 //Struct for key(first 4 bytes) and value(next 96 bytes)
 typedef struct{
 	char record[101];	// pointer to record
@@ -14,6 +22,16 @@ typedef struct{
 	Record *records;
 	int size;
 } Records;
+
+/* thread function */
+void *thr_func(void *arg) {
+  thread_data_t *data = (thread_data_t *)arg;
+ 
+  printf("hello from thr_func, thread id: %d\n", data->tid);
+ 
+  pthread_exit(NULL);
+}
+
 
 Records partitionRecords(Records rs, int first, int last){
 	int size = last - first;
@@ -108,17 +126,48 @@ int main(int argc, char** argv) {
 	//Create array of Records to hold input data
 	Record* records = (Record*) malloc(num_records * 100 * sizeof(Record));
 
-    // Read the input data file into an array of records
-    for (int i = 0; i < num_records; i++) {
-        fread(records[i].record, sizeof(char), 100, input_file);
+  // Read the input data file into an array of records
+  for (int i = 0; i < num_records; i++) {
+    fread(records[i].record, sizeof(char), 100, input_file);
 		char * r = (char*) records[i].record;
-		int key = *(int*)r;
-       	records[i].key = key;
-        fseek(input_file, 1, SEEK_CUR);
-    }
+	  int key = *(int*)r;
+    records[i].key = key;
+    fseek(input_file, 1, SEEK_CUR);
+  }
 
-    //Close the input file
-    fclose(input_file);
+  //Close the input file
+  fclose(input_file);
+
+
+  //CREATE THREADS
+  pthread_t thr[num_threads];
+  thread_data_t thr_data[num_threads];
+  int rc;
+
+  for(int i =0;i<num_threads;++i){
+  	thr_data[i].tid = i;
+  	if ((rc = pthread_create(&thr[i], NULL, thr_func, &thr_data[i]))) {
+      fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
+      return -1;
+    }
+  }
+
+  //block until all threads complete 
+  for (int i = 0; i < num_threads; ++i) {
+    pthread_join(thr[i], NULL);
+  }
+/*
+  //merge results from each thread
+  Records merged_rs = {NULL,0};
+  for(int i =0;i<num_threads;i++){
+		merged_rs = merge(merged_rs, thr_data[i].stuff;
+  }
+*/
+
+
+
+
+
 
 	Records rs = {records, num_records};
 	printf("before merge\n");
@@ -130,6 +179,7 @@ int main(int argc, char** argv) {
 	printRecords(res);
 
 
+/**
 	//Printing to output file
 FILE* output_file = fopen(output_filename, "w");
 if(output_file == NULL){
@@ -142,9 +192,10 @@ for(int i = 0; i < res.size; i++) {
 }
 
 fclose(output_file);
-
+**/
 	free(records);
 	free(res.records);
+	//free(sorted_rs.records);
 
 	return 0;
 
