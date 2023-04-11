@@ -15,6 +15,10 @@ typedef struct{
 	int size;
 } Records;
 
+Records *returns;
+int currIndex; 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 Records partitionRecords(Records rs, int first, int last){
 	int size = last - first;
 	Record *new_rs = (Record*) malloc(size * sizeof(Record));
@@ -76,6 +80,14 @@ Records merge_sort(Records rs){
 
 }
 
+void * call_merge_sort(void * arg){
+	Records rs = *(Records*) arg;
+	Records ret = merge_sort(rs);
+	pthread_mutex_lock(&lock);
+	returns[currIndex++] = ret;
+	pthread_mutex_unlock(&lock);
+}
+
 int main(int argc, char** argv) {
 	
 	// Read command-line arguments
@@ -120,24 +132,59 @@ int main(int argc, char** argv) {
     //Close the input file
     fclose(input_file);
 
+	// set up arguments
+	returns = (Records *) malloc(num_threads * sizeof(Records));
+	currIndex = 0; 
+	Records* arguments = malloc(num_threads * sizeof(Records));
 	Records rs = {records, num_records};
-	// printf("before merge\n");
-	// printRecords(rs);
+	int start = 0;
+	int interval = num_records / num_threads;
+	int end = interval + (num_records % num_threads);
+	int i = 0;
+	while (end <= num_records){
+		//printf("start: %d, end: %d, interval: %d\n", start, end, interval);
+		arguments[i] = partitionRecords(rs, start, end);
+		start = end;
+		end += interval;
+		i++;
+	}
 
-	Records res = merge_sort(rs); //FIX MERGE FUNCTION 
+	// create threads
+	pthread_t child_threads[num_threads];
+	for (i = 0; i < num_threads; i++){
+		pthread_create(&child_threads[i], NULL, call_merge_sort, &arguments[i]);
+	}
 
-	// printf("after merge\n");
-	// printRecords(res);
 
+
+	// call merge in create threads above
+	//Records res = merge_sort(rs); 
+	// join threads
+
+	for(int i = 0; i < num_threads; i++) {
+        pthread_join(child_threads[i], NULL);
+    }
+
+	//printf("joined");
+
+
+	Records ret = returns[0];
+
+	for (i = 1; i < num_threads; i++){
+		ret = merge(ret, returns[i]);
+	}
+	// output 
 	FILE * output = fopen(output_filename, "w");
 
-	for (int i = 0; i < res.size; i++){
-		fputs(res.records[i].record, output);
+	for (int i = 0; i < ret.size; i++){
+		fputs(ret.records[i].record, output);
 		fputs("\n", output);
 	}
 
 	free(records);
-	free(res.records);
+	free(ret.records);
+	free(returns);
+	free(arguments);
 
 	return 0;
 
