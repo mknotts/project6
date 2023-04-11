@@ -121,13 +121,20 @@ int main(int argc, char** argv) {
     fclose(input_file);
 
 	Records rs = {records, num_records};
-	printf("before merge\n");
-	printRecords(rs);
+	// printf("before merge\n");
+	// printRecords(rs);
 
 	Records res = merge_sort(rs); //FIX MERGE FUNCTION 
 
-	printf("after merge\n");
-	printRecords(res);
+	// printf("after merge\n");
+	// printRecords(res);
+
+	FILE * output = fopen(output_filename, "w");
+
+	for (int i = 0; i < res.size; i++){
+		fputs(res.records[i].record, output);
+		fputs("\n", output);
+	}
 
 	free(records);
 	free(res.records);
